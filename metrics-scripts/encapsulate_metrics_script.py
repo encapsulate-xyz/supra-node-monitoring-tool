@@ -74,50 +74,6 @@ def parse_timestamp_ns(line):
             return None
     return None
 
-def calculate_block_time(config):
-    """Calculate block round and height time."""
-    latest_log = find_latest_log_file(config)
-    if not latest_log:
-        return None, None
-
-    last_round, last_round_ts = None, None
-    second_last_round, second_last_round_ts = None, None
-    last_height, last_height_ts = None, None
-    second_last_height, second_last_height_ts = None, None
-
-    with open(latest_log, "r") as f:
-        for line in f:
-            ts = parse_timestamp_ns(line)
-            if not ts:
-                continue
-
-            if "Block round" in line:
-                match = re.search(r"Block round: \((\d+)\)", line)
-                if match:
-                    round_num = int(match.group(1))
-                    if last_round is not None:
-                        second_last_round, second_last_round_ts = last_round, last_round_ts
-                    last_round, last_round_ts = round_num, ts
-
-            if "Block height" in line:
-                match = re.search(r"Block height: \((\d+)\)", line)
-                if match:
-                    height = int(match.group(1))
-                    if last_height is not None:
-                        second_last_height, second_last_height_ts = last_height, last_height_ts
-                    last_height, last_height_ts = height, ts
-
-    round_time = None
-    height_time = None
-
-    if second_last_round is not None and last_round != second_last_round:
-        round_time = (last_round_ts - second_last_round_ts) / 1e9
-
-    if second_last_height is not None and last_height != second_last_height:
-        height_time = (last_height_ts - second_last_height_ts) / 1e9
-
-    return round_time, height_time
-
 def extract_latest_metrics(config):
     """Extract latest block metrics from log file."""
     latest_log = find_latest_log_file(config)
@@ -163,21 +119,13 @@ def print_all_metrics():
     print(f"supra_latest_block_epoch {metrics['epoch']}")
     print(f"supra_latest_block_round {metrics['round']}")
 
-    # Block times
-    round_time, height_time = calculate_block_time(config)
-    if round_time is not None:
-        print(f"supra_block_round_time {round_time:.7f}")
-    
-    if height_time is not None:
-        print(f"supra_block_height_time {height_time:.7f}")
-
     # Sync status
     api_metrics = fetch_api_block_metrics(config)
     if api_metrics:
         height_diff = api_metrics['height'] - metrics['height']
         epoch_diff = api_metrics['epoch'] - metrics['epoch']
         
-        status_code = 0 if height_diff <= 100 and epoch_diff <= 0 else 1
+        status_code = 0 if height_diff <= 100 and epoch_diff == 0 else 1
         print(f"supra_node_sync_status {status_code}")
 
 if __name__ == "__main__":
