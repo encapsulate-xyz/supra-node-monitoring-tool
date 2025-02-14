@@ -15,8 +15,6 @@ from datetime import datetime, timezone
 CACHE_FILE = "/tmp/ip_location_cache.json"  # Cache file for IP location data
 log_directory = sys.argv[1]
 log_dir = os.path.join(log_directory, "log/")
-GRAFANA_URL = "https://monitoring.services.supra.com"
-API_KEY = ""
 
 def save_to_cache(data):
     """Save IP and location data to a JSON file."""
@@ -166,26 +164,6 @@ def check_proposing_status():
         print(f"Error processing proposing status: {e}")
     return "not_proposing"
 
-def fetch_dashboards(grafana_url, api_key, public_ip):
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
-    }
-    try:
-        response = requests.get(f"{grafana_url}/api/search", headers=headers)
-        if response.status_code == 200:
-            dashboards = response.json()
-            matched = [
-                f"{grafana_url}{urllib.parse.quote(d['url'])}" 
-                for d in dashboards if public_ip in d['title'] or public_ip in d['url']
-            ]
-            return matched
-        else:
-            print(f"Error fetching dashboards: {response.status_code}")
-    except Exception as e:
-        print(f"Exception occurred: {str(e)}")
-    return []
-
 def main():
     service_name = "supra.service"
     ip_location_data = get_ip_and_location()
@@ -204,18 +182,13 @@ def main():
         elif height_diff > 1500 or epoch_diff > 5:
             sync_status = 503
 
-    public_ip = ip_location_data['ip']
-    dashboards = fetch_dashboards(GRAFANA_URL, API_KEY, public_ip)
-    dashboards_output = ";".join(dashboards) if dashboards else "None"
-
     print(f"ip=\"{sanitize_string(ip_location_data['ip'])}\","
           f"latitude={ip_location_data['latitude']},"
           f"longitude={ip_location_data['longitude']},"
           f"region=\"{sanitize_string(ip_location_data['region'])}\","
           f"uptime=\"{sanitize_string(uptime)}\","
           f"sync_status={sync_status},"
-          f"proposing_status=\"{sanitize_string(proposing_status)}\","
-          f"dashboards=\"{dashboards_output}\"")
+          f"proposing_status=\"{sanitize_string(proposing_status)}\"")
 
 if __name__ == "__main__":
     main()
