@@ -8,10 +8,8 @@ from datetime import datetime, timezone
 import glob
 import sys
 
-# Use /tmp directory to avoid permission issues
 CACHE_FILE = "/tmp/ip_location_cache.json"  # File to store the cached IP and location data
-log_directory = sys.argv[1]
-log_dir = os.path.join(log_directory, "log")
+log_file = sys.argv[1]
 
 def save_to_cache(data):
     """Save IP and location data to a JSON file."""
@@ -90,10 +88,11 @@ def get_ip_and_location():
 #         print(f"Error fetching version tag: {e}")
 #     return None
 
-def get_latest_log_file(log_dir):
+def get_latest_log_file(log_file):
     """Find the latest log file."""
-    log_files = glob.glob(os.path.join(log_dir, '*.log*'))
-    return max(log_files, key=os.path.getmtime) if log_files else None
+    if os.path.exists(log_file):
+        return log_file
+    return None
 
 def extract_latest_metrics(log_file):
     """Extract block metrics from the log file."""
@@ -156,7 +155,7 @@ def main():
     service_name = "supra-fullnode.service"
     ip_location_data = get_ip_and_location()
     # version_tag = get_version_tag()
-    latest_log = get_latest_log_file(log_dir)
+    latest_log = get_latest_log_file(log_file)
     log_metrics = extract_latest_metrics(latest_log) if latest_log else {}
     api_metrics = fetch_api_block_metrics()
     uptime = get_service_uptime(service_name)
