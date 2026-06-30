@@ -3,9 +3,9 @@ import re
 import subprocess
 from datetime import datetime
 import sys
-log_directory = sys.argv[1]
-parent_dir = os.path.dirname(log_directory)
-log_files = os.path.join(log_directory, "supra.log")
+log_file = sys.argv[1]
+parent_dir = os.path.dirname(log_file)
+log_files = log_file
 
 
 def extract_timestamp(line, pattern):
