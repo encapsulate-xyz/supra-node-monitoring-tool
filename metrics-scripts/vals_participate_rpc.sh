@@ -1,6 +1,6 @@
 #!/bin/bash
 
-LOG_FILE="$1/log/supra-fullnode.log*"
+LOG_FILE="$1"
 
 # Check if log files exist
 if ! ls $LOG_FILE 1> /dev/null 2>&1; then

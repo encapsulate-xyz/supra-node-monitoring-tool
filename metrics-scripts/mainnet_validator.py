@@ -13,10 +13,7 @@ from datetime import datetime, timezone
 
 # Constants
 CACHE_FILE = "/tmp/ip_location_cache.json"  # Cache file for IP location data
-log_directory = sys.argv[1]
-log_dir = os.path.join(log_directory, "log/")
-GRAFANA_URL = "https://monitoring.services.supra.com"
-API_KEY = ""
+log_file = sys.argv[1]
 
 def save_to_cache(data):
     """Save IP and location data to a JSON file."""
@@ -79,13 +76,10 @@ def get_ip_and_location():
     save_to_cache(data)
     return data
 
-def get_latest_log_file(log_dir):
+def get_latest_log_file(log_file):
     """Find the latest log file."""
-    log_files = glob.glob(os.path.join(log_dir, 'supra.log*'))  
-    if log_files:
-        # Return the latest log file based on modification time
-        latest_log = max(log_files, key=os.path.getmtime)
-        return latest_log
+    if os.path.exists(log_file):
+        return log_file
     return None
 
 def extract_latest_metrics(log_file):
@@ -148,7 +142,7 @@ def get_service_uptime(service_name):
 def check_proposing_status():
     """Check if the node is proposing blocks."""
     log_command = (
-        f"awk '/Proposing.*SmrBlock/ {{ print $0 }}' $(ls -t {log_dir}* | head -n 2) "
+        f"awk '/Proposing.*SmrBlock/ {{ print $0 }}' {log_file} "
         "| sort -k1,2 -r | head -n 1"
     )
     current_time = datetime.now(timezone.utc)
@@ -166,30 +160,10 @@ def check_proposing_status():
         print(f"Error processing proposing status: {e}")
     return "not_proposing"
 
-def fetch_dashboards(grafana_url, api_key, public_ip):
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
-    }
-    try:
-        response = requests.get(f"{grafana_url}/api/search", headers=headers)
-        if response.status_code == 200:
-            dashboards = response.json()
-            matched = [
-                f"{grafana_url}{urllib.parse.quote(d['url'])}" 
-                for d in dashboards if public_ip in d['title'] or public_ip in d['url']
-            ]
-            return matched
-        else:
-            print(f"Error fetching dashboards: {response.status_code}")
-    except Exception as e:
-        print(f"Exception occurred: {str(e)}")
-    return []
-
 def main():
     service_name = "supra.service"
     ip_location_data = get_ip_and_location()
-    latest_log = get_latest_log_file(log_dir)
+    latest_log = get_latest_log_file(log_file)
     log_metrics = extract_latest_metrics(latest_log) if latest_log else {}
     api_metrics = fetch_api_block_metrics()
     uptime = get_service_uptime(service_name)
@@ -204,18 +178,13 @@ def main():
         elif height_diff > 1500 or epoch_diff > 5:
             sync_status = 503
 
-    public_ip = ip_location_data['ip']
-    dashboards = fetch_dashboards(GRAFANA_URL, API_KEY, public_ip)
-    dashboards_output = ";".join(dashboards) if dashboards else "None"
-
     print(f"ip=\"{sanitize_string(ip_location_data['ip'])}\","
           f"latitude={ip_location_data['latitude']},"
           f"longitude={ip_location_data['longitude']},"
           f"region=\"{sanitize_string(ip_location_data['region'])}\","
           f"uptime=\"{sanitize_string(uptime)}\","
           f"sync_status={sync_status},"
-          f"proposing_status=\"{sanitize_string(proposing_status)}\","
-          f"dashboards=\"{dashboards_output}\"")
+          f"proposing_status=\"{sanitize_string(proposing_status)}\"")
 
 if __name__ == "__main__":
     main()

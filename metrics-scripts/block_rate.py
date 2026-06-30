@@ -3,11 +3,9 @@ import re
 import glob
 from dateutil import parser
 import sys
-parent_dir = sys.argv[1]
-
-log_dir = os.path.join(parent_dir, "log")
-
-epoch_file_pattern = "supra.log*"
+log_file = sys.argv[1]
+log_dir = os.path.dirname(log_file)
+epoch_file_pattern = os.path.basename(log_file) + "*"
 
 def find_latest_log_file():
     files = sorted(glob.glob(f"{log_dir}/{epoch_file_pattern}"), key=os.path.getmtime, reverse=True)

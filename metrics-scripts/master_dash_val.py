@@ -3,14 +3,13 @@ import json
 import requests
 import subprocess
 import re
-from datetime import datetime
+from dateutil import parser
+from datetime import datetime, timezone
 import glob
 import sys
 
-# Use /tmp directory to avoid permission issues
 CACHE_FILE = "/tmp/ip_location_cache.json"  # File to store the cached IP and location data
-log_directory = sys.argv[1]
-log_dir = os.path.join(log_directory, "log")
+log_file = sys.argv[1]
 
 def save_to_cache(data):
     """Save IP and location data to a JSON file."""
@@ -89,10 +88,11 @@ def get_ip_and_location():
 #         print(f"Error fetching version tag: {e}")
 #     return None
 
-def get_latest_log_file(log_dir):
+def get_latest_log_file(log_file):
     """Find the latest log file."""
-    log_files = glob.glob(os.path.join(log_dir, 'supra.log*'))
-    return max(log_files, key=os.path.getmtime) if log_files else None
+    if os.path.exists(log_file):
+        return log_file
+    return None
 
 def extract_latest_metrics(log_file):
     """Extract block metrics from the log file."""
@@ -126,25 +126,6 @@ def fetch_api_block_metrics():
         print(f"Error fetching API metrics: {e}")
         return None
 
-def format_uptime(uptime_seconds):
-    """Format uptime as months, weeks, days, and hours."""
-    days, remainder = divmod(uptime_seconds, 86400)
-    hours = remainder // 3600
-    weeks = days // 7
-    months = days // 30
-    remaining_days = days % 30
-
-    parts = []
-    if months > 0:
-        parts.append(f"{months} month{'s' if months > 1 else ''}")
-    if weeks > 0:
-        parts.append(f"{weeks} week{'s' if weeks > 1 else ''}")
-    if remaining_days > 0:
-        parts.append(f"{remaining_days} day{'s' if remaining_days > 1 else ''}")
-    if hours > 0:
-        parts.append(f"{hours} hour{'s' if hours > 1 else ''}")
-    return ", ".join(parts)
-
 def get_service_uptime(service_name):
     """Get the uptime of the service."""
     try:
@@ -154,29 +135,27 @@ def get_service_uptime(service_name):
             stderr=subprocess.PIPE,
             text=True
         )
-
         match = re.search(r'Active: active \(running\) since (.+?);', result.stdout)
         if match:
             uptime_str = match.group(1)
-            # Remove timezone (e.g., "UTC") if present
-            uptime_str = uptime_str.replace(" UTC", "")
-            # Parse the date string and calculate the uptime
-            uptime = datetime.strptime(uptime_str, "%a %Y-%m-%d %H:%M:%S")
-            now = datetime.utcnow()
-            delta = now - uptime
-            return format_uptime(delta.total_seconds())
-        else:
-            print("Service is not active or unable to parse uptime.")
-            return "Unknown uptime"
+            try:
+                # Use dateutil parser which handles various time formats better
+                uptime = parser.parse(uptime_str)
+                delta = datetime.now(uptime.tzinfo) - uptime
+                days = delta.days
+                hours = delta.seconds // 3600
+                return f"{days}d {hours}h"
+            except Exception as e:
+                print(f"Error parsing uptime date: {e}")
     except Exception as e:
         print(f"Error getting service uptime: {e}")
-        return "Error retrieving uptime"
+    return "Unknown"
 
 def main():
     service_name = "supra.service"
     ip_location_data = get_ip_and_location()
     # version_tag = get_version_tag()
-    latest_log = get_latest_log_file(log_dir)
+    latest_log = get_latest_log_file(log_file)
     log_metrics = extract_latest_metrics(latest_log) if latest_log else {}
     api_metrics = fetch_api_block_metrics()
     uptime = get_service_uptime(service_name)

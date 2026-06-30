@@ -3,16 +3,13 @@ import glob
 import re
 from datetime import datetime
 import sys
-# Directory where the logs are stored
-parent_dir = sys.argv[1]
+log_file = sys.argv[1]
+log_dir = os.path.dirname(log_file)
 
-log_dir = os.path.join(parent_dir, "log")
-
-def get_latest_log_file(log_dir):
-    """Finds the latest log file based on modification time."""
-    log_files = glob.glob(os.path.join(log_dir, 'supra.log*'))
-    if log_files:
-        return max(log_files, key=os.path.getmtime)
+def get_latest_log_file(log_file):
+    """Returns the log file path if it exists."""
+    if os.path.exists(log_file):
+        return log_file
     return None
 
 def extract_latest_metrics(log_file):
@@ -48,7 +45,7 @@ def extract_latest_metrics(log_file):
         return metrics
 
 def main():
-    latest_log = get_latest_log_file(log_dir)
+    latest_log = get_latest_log_file(log_file)
     
     if latest_log:
         # print(f"Processing log file: {latest_log}")

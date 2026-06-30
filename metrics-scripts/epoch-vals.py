@@ -5,10 +5,7 @@ import gzip
 from datetime import datetime, timedelta
 import sys
 
-# Directory where the logs are stored
-parent_dir = sys.argv[1]
-log_dir = os.path.join(parent_dir, "log")
-epoch_file_pattern = "supra.log*"
+log_file_path = sys.argv[1]
 
 def add_seconds_to_timestamp(timestamp_str, seconds):
     # Replace "Z+00:00" or "Z" with "+00:00" for compatibility with fromisoformat
@@ -28,7 +25,7 @@ def find_latest_epoch_info():
     epoch_starts = {}
     max_epoch = None
 
-    for log_file in sorted(glob.glob(f"{log_dir}/{epoch_file_pattern}")):
+    for log_file in [log_file_path]:
         try:
             with open_log_file(log_file) as f:
                 for line in f:
