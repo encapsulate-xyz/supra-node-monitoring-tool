@@ -1,14 +1,14 @@
 #!/bin/bash
 
-LOG_FILE="$1/log/supra.log"
+LOG_FILE="$1"
 
 # Check if the log file exists
-if ! ls $LOG_FILE* 1> /dev/null 2>&1; then
+if [ ! -f "$LOG_FILE" ]; then
   exit 0  # Quiet exit if no log files found
 fi
 
 # Search for the latest occurrence of the "Reached connectivity level" line
-line=$(grep -h "Reached connectivity level" $LOG_FILE* | tail -1)
+line=$(grep -h "Reached connectivity level" "$LOG_FILE" | tail -1)
 
 # If the line is not found, exit quietly
 if [ -z "$line" ]; then

@@ -3,8 +3,9 @@ import re
 import subprocess
 from datetime import datetime
 import sys
-log_directory = sys.argv[1]
-log_files = os.path.join(log_directory, "log/supra.log")
+log_file = sys.argv[1]
+parent_dir = os.path.dirname(log_file)
+log_files = log_file
 
 
 def extract_timestamp(line, pattern):
@@ -67,11 +68,11 @@ def main():
     supra_fail_rate = process_logs("supra status: Fail", log_files, extract_rate=True)
 
     # Disk usage metrics
-    rpc_ledger = get_disk_usage(log_directory)
-    rpc_store = get_disk_usage(log_directory)
-    rpc_archive = get_disk_usage(log_directory)
-    smr_storage = get_disk_usage(log_directory)
-    ledger_storage = get_disk_usage(log_directory)
+    rpc_ledger = get_disk_usage(parent_dir)
+    rpc_store = get_disk_usage(parent_dir)
+    rpc_archive = get_disk_usage(parent_dir)
+    smr_storage = get_disk_usage(parent_dir)
+    ledger_storage = get_disk_usage(parent_dir)
 
     # Output in InfluxDB line protocol format for Telegraf without host
     print(f"metrics Supra_Fail_Count={supra_fail_count},VM_Success_Count={vm_success_count},VM_Success_Rate={vm_success_rate},Supra_Fail_Rate={supra_fail_rate},rpc_ledger={rpc_ledger},rpc_store={rpc_store},rpc_archive={rpc_archive},smr_storage={smr_storage},ledger_storage={ledger_storage}")

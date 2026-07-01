@@ -5,9 +5,8 @@ import sys
 import os
 import glob
 
-# Path to the log files
-log_dir = sys.argv[1]
-log_files = glob.glob(os.path.join(log_dir, 'log/supra.log*'))
+log_file = sys.argv[1]
+log_files = [log_file]
 
 # Regex patterns to extract the transaction hash and timestamps
 transaction_received_pattern = r"mempool::batch_proposer: Received transaction: (\w+)"
