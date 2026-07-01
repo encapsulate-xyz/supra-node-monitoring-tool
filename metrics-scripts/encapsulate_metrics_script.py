@@ -11,7 +11,7 @@ import requests
 NODE_CONFIGS = {
     # Validator
     'validator': {
-        'parent_dir': '/opt/supra/log',
+        'parent_dir': '/opt/supra/config/supra_node_logs',
         'log_pattern': 'supra.log',
         'rpc_urls': {
             'mainnet': 'https://rpc-mainnet.supra.com/rpc/v1/block',
@@ -20,7 +20,7 @@ NODE_CONFIGS = {
     },
     # Fullnode
     'fullnode': {
-        'parent_dir': '/opt/supra-fullnode/log',
+        'parent_dir': '/opt/supra-fullnode/config/supra_node_logs',
         'log_pattern': 'supra-fullnode.log',
         'rpc_urls': {
             'mainnet': 'https://rpc-mainnet.supra.com/rpc/v1/block',
